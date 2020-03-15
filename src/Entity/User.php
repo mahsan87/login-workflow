@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -25,6 +26,16 @@ class User
      * @ORM\Column(type="string", length=255)
      */
     private $password;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Image", mappedBy="imageFile", cascade={"persist"})
+     */
+    private $image;
+
+    public function __construct()
+    {
+        $this->image = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -53,5 +64,22 @@ class User
         $this->password = $password;
 
         return $this;
+    }
+
+    public function getImage()
+    {
+        return $this->image;
+    }
+
+
+    public function addImage($image)
+    {
+        $this->image[] = $image;
+        return $this;
+    }
+
+    public function remove($image)
+    {
+        $this->getImage()->remove($image);
     }
 }

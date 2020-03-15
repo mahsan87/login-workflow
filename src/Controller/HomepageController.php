@@ -2,12 +2,16 @@
 
 namespace App\Controller;
 
+use App\Entity\Image;
 use App\Entity\User;
 use App\Form\CreateUser;
+use App\Form\ImageUpload;
 use App\Form\Login;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -18,15 +22,18 @@ class HomepageController extends Controller
     private $userRepository;
     private $serializer;
     private $entityManager;
+    private $directory;
 
     public function __construct(
         UserRepository $userRepository,
         SerializerInterface $serializer,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        string $directory
     ) {
         $this->userRepository = $userRepository;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
+        $this->directory = $directory;
     }
 
     /**
@@ -48,9 +55,13 @@ class HomepageController extends Controller
                 );
 
                 if ($userData instanceof User) {
-                    return $this->redirectToRoute('success');
+                    return $this->redirectToRoute('success', ['id' => $userData->getId()]);
                 }
 
+                $this->addFlash(
+                    'notice',
+                    'Incorrect Login data. User not found!'
+                );
                 return $this->redirectToRoute('login');
             }
 
@@ -68,11 +79,64 @@ class HomepageController extends Controller
     }
 
     /**
-     * @Route("/home", name="success")
+     * @Route("/home/{id}", name="success")
      */
-    public function success()
+    public function home(Request $request, $id)
     {
-        die('in home');
+        $image = new Image();
+        $user = $this->userRepository->findOneBy(['id' => $id]);
+
+        $form = $this->createForm(ImageUpload::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            /** @var UploadedFile $uploadedFile */
+            $uploadedFile = $form->get('image')->getData();
+
+            if ($uploadedFile) {
+                $fileName = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+                // this is needed to safely include the file name as part of the URL
+                $safeFilename = transliterator_transliterate('Any-Latin; Latin-ASCII; [^A-Za-z0-9_] remove; Lower()', $fileName);
+                $newFilename = $safeFilename.'-'.uniqid().'.'.$uploadedFile->guessExtension();
+
+                // Move the file to the directory where images are stored
+                try {
+                    $uploadedFile->move(
+                        $this->directory,
+                        $newFilename
+                    );
+                } catch (FileException $e) {
+                    // ... handle exception if something happens during file upload
+                }
+
+                $user->getImage()->add($image->setImageFile($user));
+                $image->setName($newFilename);
+
+                $user->addImage($image);
+
+                $this->entityManager->persist($user);
+                $this->entityManager->flush();
+
+                $images = $this->getImages($user->getId());
+
+                return $this->render(
+                    'image.html.twig',
+                    [
+                        'form' => $form->createView(),
+                        'images' => $images ?? null
+                    ]
+                );
+            }
+        }
+
+        $images = $this->getImages($user->getId());
+        return $this->render(
+            'image.html.twig',
+            [
+                'form' => $form->createView(),
+                'images' => $images ?? null
+            ]
+        );
     }
 
     /**
@@ -90,7 +154,7 @@ class HomepageController extends Controller
                 $this->entityManager->persist($userData);
                 $this->entityManager->flush();
 
-                return $this->redirectToRoute('login');
+                return $this->redirectToRoute('login', ['id' => $userData->getId()]);
             }
         }
         return $this->render(
@@ -99,5 +163,15 @@ class HomepageController extends Controller
               'form' => $form->createView()
           ]
         );
+    }
+
+
+    private function getImages(int $id): ?array
+    {
+        $user = $this->userRepository->findOneBy(['id' => $id]);
+        if ($user instanceof User) {
+            return $user->getImage()->toArray();
+        }
+        return null;
     }
 }

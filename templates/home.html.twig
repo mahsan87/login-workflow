@@ -11,6 +11,13 @@
             {{ form_widget(form) }}
             {{ form_end(form) }}
         {% endblock %}
+
+
+        {% for message in app.flashes('notice') %}
+            <div class="flash-notice">
+                {{ message }}
+            </div>
+        {% endfor %}
         {% block javascripts %}{% endblock %}
     </body>
 </html>

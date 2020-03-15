@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Welcome!{% endblock %}</title>
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+{% block body %}
+    {{ form_start(form, {attr: {'novalidate': 'novalidate'}}) }}
+    {{ form_widget(form) }}
+    {{ form_end(form) }}
+
+    {% if images is defined %}
+        {% for image in images %}
+            <img src="{{ asset('uploads/'~image.name) }}"/>
+        {% endfor %}
+    {% endif %}
+
+
+
+{% endblock %}
+{% block javascripts %}{% endblock %}
+</body>
+</html>
