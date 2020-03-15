@@ -81,10 +81,14 @@ class HomepageController extends Controller
     /**
      * @Route("/home/{id}", name="success")
      */
-    public function home(Request $request, $id)
+    public function home(Request $request, $id): Response
     {
         $image = new Image();
         $user = $this->userRepository->findOneBy(['id' => $id]);
+
+        if (null === $user) {
+            return $this->redirectToRoute('login');
+        }
 
         $form = $this->createForm(ImageUpload::class);
         $form->handleRequest($request);
