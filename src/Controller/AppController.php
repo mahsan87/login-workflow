@@ -15,23 +15,19 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\SerializerInterface;
 
-class HomepageController extends Controller
+class AppController extends Controller
 {
     private $userRepository;
-    private $serializer;
     private $entityManager;
     private $directory;
 
     public function __construct(
         UserRepository $userRepository,
-        SerializerInterface $serializer,
         EntityManagerInterface $entityManager,
         string $directory
     ) {
         $this->userRepository = $userRepository;
-        $this->serializer = $serializer;
         $this->entityManager = $entityManager;
         $this->directory = $directory;
     }
