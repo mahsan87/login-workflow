@@ -38,6 +38,7 @@ RUN mkdir -p /var/www/app
 WORKDIR /var/www/app
 
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+COPY php.ini /usr/local/etc/php/php.ini
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
