@@ -27,7 +27,7 @@ class ImageUpload extends AbstractType
                             'image/jpeg',
                             'image/png'
                         ],
-                        'mimeTypesMessage' => 'Please upload a valid ImageUpload file',
+                        'mimeTypesMessage' => 'Please upload a valid image file',
                     ])
                 ]
             ])
