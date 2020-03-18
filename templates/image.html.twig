@@ -28,7 +28,7 @@
                         </td>
                         <td style="width: 300px"><div class="divTableCell"><b>{{ image.imageExtension }} </b></div></td>
                         <td style="width: 300px"><div class="divTableCell"><input type="submit" name="{{ image.name }}" value="Delete" onclick="document.getElementById('deleteImageName').submit()"></div></td>
-                         <input id="deleteImageName" type="hidden" name="imageId" value="{{ image.id }}"/>
+                         <input id="deleteImageName" type="hidden" name="deleteImage" value="{{ image.id }}"/>
                         <td style="width: 300px"><div class="divTableCell"> <input type="submit" value="Edit"></div></td>
                     </tr>
                     </tbody>

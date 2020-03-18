@@ -95,11 +95,11 @@ class AppController extends Controller
      */
     public function home(Request $request, $id): Response
     {
-        if (null !== $request->query->get('imageId')) {
+        if (null !== $request->query->get('deleteImage')) {
             return $this->redirectToRoute(
-                'edit',
+                'delete',
                 [
-                    'imageId' => $request->query->get('imageId')
+                    'imageId' => $request->query->get('deleteImage')
                 ]
             );
         }
@@ -170,7 +170,7 @@ class AppController extends Controller
     }
 
     /**
-     * @Route("/edit/{imageId}", name="edit")
+     * @Route("/delete/{imageId}", name="delete")
      */
     public function editImageAction($imageId): Response
     {
