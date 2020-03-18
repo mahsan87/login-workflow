@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Form\CreateUser;
 use App\Form\ImageUpload;
 use App\Form\Login;
+use App\Repository\ImageRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -18,18 +19,23 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class AppController extends Controller
 {
+    private const ADMIN_USER = 'admin';
     private $userRepository;
     private $entityManager;
     private $directory;
+    private $imageRepository;
+
 
     public function __construct(
         UserRepository $userRepository,
         EntityManagerInterface $entityManager,
-        string $directory
+        string $directory,
+        ImageRepository $imageRepository
     ) {
         $this->userRepository = $userRepository;
         $this->entityManager = $entityManager;
         $this->directory = $directory;
+        $this->imageRepository = $imageRepository;
     }
 
     /**
@@ -51,6 +57,15 @@ class AppController extends Controller
                 );
 
                 if ($userData instanceof User) {
+                    if ($userData->getName() === self::ADMIN_USER) {
+                        return $this->render(
+                            'admin.html.twig',
+                            [
+                                'images' => $this->getAllImages()
+                            ]
+                        );
+                    }
+
                     return $this->redirectToRoute('success', ['id' => $userData->getId()]);
                 }
 
@@ -58,6 +73,7 @@ class AppController extends Controller
                     'notice',
                     'Incorrect Login data. User not found!'
                 );
+
                 return $this->redirectToRoute('login');
             }
 
@@ -69,7 +85,7 @@ class AppController extends Controller
         return $this->render(
             'home.html.twig',
             [
-             'form' => $form->createView()
+                'form' => $form->createView()
             ]
         );
     }
@@ -79,6 +95,15 @@ class AppController extends Controller
      */
     public function home(Request $request, $id): Response
     {
+        if (null !== $request->query->get('imageId')) {
+            return $this->redirectToRoute(
+                'edit',
+                [
+                    'imageId' => $request->query->get('imageId')
+                ]
+            );
+        }
+
         $image = new Image();
         $user = $this->userRepository->findOneBy(['id' => $id]);
 
@@ -96,8 +121,22 @@ class AppController extends Controller
             if ($uploadedFile) {
                 $fileName = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
                 // this is needed to safely include the file name as part of the URL
-                $safeFilename = transliterator_transliterate('Any-Latin; Latin-ASCII; [^A-Za-z0-9_] remove; Lower()', $fileName);
-                $newFilename = $safeFilename.'-'.uniqid().'.'.$uploadedFile->guessExtension();
+                $safeFilename = transliterator_transliterate(
+                    'Any-Latin; Latin-ASCII; [^A-Za-z0-9_] remove; Lower()',
+                    $fileName
+                );
+                $newFilename = $safeFilename . '-' . uniqid() . '.' . $uploadedFile->guessExtension();
+
+                $image->setName($newFilename);
+                $image->setImageSize($uploadedFile->getSize());
+                $image->setImageExtension($uploadedFile->getMimeType());
+                $user->getImage()->add($image->setImageFile($user));
+
+                $user->addImage($image);
+                $images = $this->getImages($user->getId());
+
+                $this->entityManager->persist($user);
+                $this->entityManager->flush();
 
                 // Move the file to the directory where images are stored
                 try {
@@ -108,16 +147,6 @@ class AppController extends Controller
                 } catch (FileException $e) {
                     // ... handle exception if something happens during file upload
                 }
-
-                $user->getImage()->add($image->setImageFile($user));
-                $image->setName($newFilename);
-
-                $user->addImage($image);
-
-                $this->entityManager->persist($user);
-                $this->entityManager->flush();
-
-                $images = $this->getImages($user->getId());
 
                 return $this->render(
                     'image.html.twig',
@@ -130,12 +159,28 @@ class AppController extends Controller
         }
 
         $images = $this->getImages($user->getId());
+
         return $this->render(
             'image.html.twig',
             [
                 'form' => $form->createView(),
                 'images' => $images ?? null
             ]
+        );
+    }
+
+    /**
+     * @Route("/edit/{imageId}", name="edit")
+     */
+    public function editImageAction($imageId): Response
+    {
+        $imageEntity = $this->imageRepository->findOneBy(['id' => $imageId]);
+        $this->entityManager->remove($imageEntity);
+        $this->entityManager->flush();
+
+        return $this->redirectToRoute(
+            'success',
+            ['id' => $imageEntity->getImageFile()->getId()]
         );
     }
 
@@ -173,5 +218,10 @@ class AppController extends Controller
             return $user->getImage()->toArray();
         }
         return null;
+    }
+
+    private function getAllImages(): ?array
+    {
+        return $this->imageRepository->findAll();
     }
 }

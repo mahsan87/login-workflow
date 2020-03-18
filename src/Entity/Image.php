@@ -27,12 +27,22 @@ class Image
      */
     private $name;
 
+    /**
+     * @ORM\Column(name="imageSize", type="bigint")
+     */
+    private $imageSize;
+
+    /**
+     * @ORM\Column(name="imageExtension", type="string", length=255)
+     */
+    private $imageExtension;
+
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getImageFile(): ?string
+    public function getImageFile(): ?User
     {
         return $this->imageFile;
     }
@@ -61,10 +71,34 @@ class Image
     }
 
     /**
-     * @return string
+     * @return mixed
      */
-    public function __toString()
+    public function getImageSize()
     {
-        return $this->getName();
+        return $this->imageSize;
+    }
+
+    /**
+     * @param mixed $imageSize
+     */
+    public function setImageSize($imageSize): void
+    {
+        $this->imageSize = $imageSize;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getImageExtension()
+    {
+        return $this->imageExtension;
+    }
+
+    /**
+     * @param mixed $imageExtension
+     */
+    public function setImageExtension($imageExtension): void
+    {
+        $this->imageExtension = $imageExtension;
     }
 }

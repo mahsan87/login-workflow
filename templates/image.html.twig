@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Welcome!{% endblock %}</title>
@@ -11,14 +11,31 @@
     {{ form_widget(form) }}
     {{ form_end(form) }}
 
+    <!--------------------------->
     {% if images is defined %}
         {% for image in images %}
-            <img src="{{ asset('uploads/'~image.name) }}"/>
+            <form action="success" method="get">
+                <table>
+                    <tbody>
+                    <tr>
+                        <td style="width: 300px"><div class="divTableCell"><b>{{ image.name }}</b></div></td>
+                        <td style="width: 300px">
+                            <div class="divTableCell">
+                                <a download="{{ image.name }}" href="{{ asset('uploads/'~image.name) }}" title="{{ image.name }}">
+                                    <img src="{{ asset('uploads/'~image.name) }}" height="300px"/>
+                                </a>
+                            </div>
+                        </td>
+                        <td style="width: 300px"><div class="divTableCell"><b>{{ image.imageExtension }} </b></div></td>
+                        <td style="width: 300px"><div class="divTableCell"><input type="submit" name="{{ image.name }}" value="Delete" onclick="document.getElementById('deleteImageName').submit()"></div></td>
+                         <input id="deleteImageName" type="hidden" name="imageId" value="{{ image.id }}"/>
+                        <td style="width: 300px"><div class="divTableCell"> <input type="submit" value="Edit"></div></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </form>
         {% endfor %}
     {% endif %}
-
-
-
 {% endblock %}
 {% block javascripts %}{% endblock %}
 </body>
